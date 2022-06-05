@@ -1,0 +1,131 @@
+#include <glad/glad.h>
+#include <iostream>
+#include <GLFW/glfw3.h>
+using namespace std;
+
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
+const char* fragmentShaderSource = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(0.8f, 0.3f, 0.02f, 1.0f);\n"
+"}\n\0";
+
+#define ELEMENTS_AMOUNT 3
+#define STRING_LENGTH 0.63
+#define STRING_STEP STRING_LENGTH/ELEMENTS_AMOUNT
+#define STRING_START_X -0.8
+#define STRING_START_Y 0.8
+
+double startingDistribution(double x) {
+    double y = 0;
+    return y;
+};
+
+int main(void) {
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_MAXIMIZED, 0x00020008);
+
+    GLfloat vertices[3 * (ELEMENTS_AMOUNT + 1)];
+
+    for (int i = 0; i < 3 * (ELEMENTS_AMOUNT + 1) - 1; i += 3) {
+        vertices[i] = STRING_STEP * int(i / 3) + STRING_START_X;
+        vertices[i + 1] = startingDistribution(vertices[i]) + STRING_START_Y;
+        vertices[i + 2] = 0;
+    };
+
+    /*
+    -1.0f, -1.0f, 0.0f, // bottom left
+       0.0f, 0.0f, 0.0f, // center
+       1.0f, 1.0f, 0.0f, // top right
+       0.0f, 0.9f, 0.0f // top
+    */
+
+    GLFWwindow* window;
+
+    if (!glfwInit())
+        return -1;
+
+    window = glfwCreateWindow(800, 800, "sup", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    gladLoadGL();
+
+    glViewport(0, 0, 800, 800);
+
+    // building shaders idk
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    GLuint shaderProgram = glCreateProgram();
+
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+
+    glLinkProgram(shaderProgram);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+
+    GLuint VAO, VBO;
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        /* Render here */
+        glClear(GL_COLOR_BUFFER_BIT);
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_LINE_STRIP, 0, 4);
+
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
+
+        /* Poll for and process events */
+        glfwPollEvents();
+    }
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteProgram(shaderProgram);
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
+}
